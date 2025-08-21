@@ -291,9 +291,8 @@ If point is on a `dired' file, open for trimming."
                    "-f" "image2"
                    "-y" ,temp-file)))
     ;; (message "FRAME EXTRACT: ffmpeg %s" params)
-    (when (and video-trimmer--frame-file
-               (file-exists-p video-trimmer--frame-file))
-      (delete-file video-trimmer--frame-file)
+    (when (file-exists-p temp-file)
+      (delete-file temp-file)
       (image-flush (create-image temp-file 'jpeg nil :max-height (frame-pixel-height))))
     (setq video-trimmer--frame-file temp-file)
     (let ((result (apply #'call-process "ffmpeg" nil nil nil params)))
