@@ -19,6 +19,19 @@
 
 ;;; Commentary:
 
+;; Load with:
+;;
+;;  (require 'video-trimmer)
+;;
+;; Open a file with:
+;;
+;;  M-x video-trimmer-trim-file
+
+;; Please report issues or send patches to
+;; https://github.com/xenodium/video-trimmer
+;;
+;; Support the work https://github.com/sponsors/xenodium
+
 ;;; Code:
 
 (require 'dired)
@@ -66,7 +79,7 @@
 (define-key video-trimmer-mode-map (kbd "RET") #'video-trimmer-save-trimmed-copy)
 (define-key video-trimmer-mode-map (kbd "?") #'video-trimmer-menu)
 
-(defun video-trimmer-trim()
+(defun video-trimmer-trim-file()
   "Open a video file for trimming.
 
 If point is on a `dired' file, open for trimming."
