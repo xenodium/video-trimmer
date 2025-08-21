@@ -1,0 +1,14 @@
+* video-trimmer
+
+A video-trimming utility for Emacs.
+
+* Install
+
+#+begin_src emacs-lisp :lexical no
+  (use-package video-trimmer
+    :vc (:url "https://github.com/xenodium/video-trimmer"))
+#+end_src
+
+* Trimming videos
+
+Invoke =M-x video-trimming-trim= to open and trim a video. If invoked from =dired=, it opens file at point.
