@@ -6,6 +6,10 @@ A video-trimming utility for Emacs.
 
 #+HTML: <img src="https://github.com/xenodium/video-trimmer/blob/main/demo.png" style="max-width:80%;" />
 
+* Blog post
+
+I wrote a little about how this utility came about in this [[https://xenodium.com/emacs-as-your-video-trimming-tool][blog post]].
+
 * Install
 
 #+begin_src emacs-lisp :lexical no
