@@ -96,6 +96,7 @@ If point is on a `dired' file, open for trimming."
   (setq video-trimmer-move-by-increment
         (cond ((< video-trimmer-move-by-increment 0.1) 0.1)
               ((< video-trimmer-move-by-increment 0.5) 0.5)
+              ((< video-trimmer-move-by-increment 1.0) 1.0)
               ((< video-trimmer-move-by-increment 5.0) 5.0)
               ((< video-trimmer-move-by-increment 20.0) 20.0)
               ((< video-trimmer-move-by-increment 50.0) 50.0)
@@ -112,6 +113,7 @@ If point is on a `dired' file, open for trimming."
               ((> video-trimmer-move-by-increment 50.0) 50.0)
               ((> video-trimmer-move-by-increment 20.0) 20.0)
               ((> video-trimmer-move-by-increment 5.0) 5.0)
+              ((> video-trimmer-move-by-increment 1.0) 1.0)
               ((> video-trimmer-move-by-increment 0.5) 0.5)
               ((> video-trimmer-move-by-increment 0.1) 0.1)
               (t video-trimmer-move-by-increment))))
