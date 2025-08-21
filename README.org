@@ -1,6 +1,10 @@
+👉 [[https://github.com/sponsors/xenodium][Support this work via GitHub Sponsors]]
+
 * video-trimmer
 
 A video-trimming utility for Emacs.
+
+#+HTML: <img src="https://xenodium.github.io/images/emacs-as-your-video-trimming-tool/trim.gif" style="max-width:80%;" />
 
 * Install
 
