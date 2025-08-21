@@ -4,7 +4,7 @@
 
 A video-trimming utility for Emacs.
 
-#+HTML: <img src="https://github.com/xenodium/video-trimmer/blob/main/demo.gif" style="max-width:80%;" />
+#+HTML: <img src="https://github.com/xenodium/video-trimmer/blob/main/demo.png" style="max-width:80%;" />
 
 * Install
 
