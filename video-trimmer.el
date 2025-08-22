@@ -156,7 +156,7 @@ If point is on a `dired' file, open for trimming."
              (eq video-trimmer--active-control 'bar))
          (video-trimmer--extract-frame video-trimmer--trim-front))
         ((eq video-trimmer--active-control 'back)
-         (video-trimmer--extract-frame video-trimmer--trim-back)))
+         (video-trimmer--extract-frame (- video-trimmer--total video-trimmer--trim-back))))
   (video-trimmer--update-timeline))
 
 (defun video-trimmer-move-backward ()
@@ -173,7 +173,7 @@ If point is on a `dired' file, open for trimming."
              (eq video-trimmer--active-control 'bar))
          (video-trimmer--extract-frame video-trimmer--trim-front))
         ((eq video-trimmer--active-control 'back)
-         (video-trimmer--extract-frame video-trimmer--trim-back)))
+         (video-trimmer--extract-frame (- video-trimmer--total video-trimmer--trim-back))))
   (video-trimmer--update-timeline))
 
 (defun video-trimmer-move-bar-forward ()
@@ -289,7 +289,7 @@ If point is on a `dired' file, open for trimming."
   (interactive)
   (browse-url "https://www.youtube.com/watch?v=9kaIXkImCAM"))
 
-(defun video-trimmer-cycle-active-controls ()
+(defun video-trimmer-cycle-active-control ()
   "Cycle through active controls."
   (interactive)
   (setq video-trimmer--active-control
