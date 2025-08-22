@@ -34,9 +34,10 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'dired)
-(require 'transient)
 (require 'seq)
+(require 'transient)
 
 (defcustom video-trimmer-move-by-increment 1.0
   "Supported video media."
@@ -62,6 +63,7 @@
 (defvar-local video-trimmer--trim-back 0.0)
 (defvar-local video-trimmer--filename nil)
 (defvar-local video-trimmer--frame-file nil)
+(defvar-local video-trimmer--active-control 'front)
 
 (define-derived-mode video-trimmer-mode special-mode "Video trimmer"
   "Mode for trimming videos."
@@ -70,6 +72,13 @@
   (setq-local video-trimmer--trim-front nil)
   (setq-local video-trimmer--trim-back nil))
 
+(define-key video-trimmer-mode-map (kbd "TAB") #'video-trimmer-cycle-active-control)
+(define-key video-trimmer-mode-map (kbd "<right>") #'video-trimmer-move-forward)
+(define-key video-trimmer-mode-map (kbd "<left>") #'video-trimmer-move-backward)
+(define-key video-trimmer-mode-map (kbd "C-M-[") #'video-trimmer-move-bar-backward)
+(define-key video-trimmer-mode-map (kbd "C-M-]") #'video-trimmer-move-bar-forward)
+(define-key video-trimmer-mode-map (kbd "<up>") #'video-trimmer-increment-increment)
+(define-key video-trimmer-mode-map (kbd "<down>") #'video-trimmer-decrement-increment)
 (define-key video-trimmer-mode-map (kbd "}") #'video-trimmer-move-front-forward)
 (define-key video-trimmer-mode-map (kbd "{") #'video-trimmer-move-front-backward)
 (define-key video-trimmer-mode-map (kbd "]") #'video-trimmer-move-back-forward)
@@ -115,7 +124,8 @@ If point is on a `dired' file, open for trimming."
               ((< video-trimmer-move-by-increment 50.0) 50.0)
               ((< video-trimmer-move-by-increment 300.0) 300.0)
               ((< video-trimmer-move-by-increment 600.0) 600.0)
-              (t video-trimmer-move-by-increment))))
+              (t video-trimmer-move-by-increment)))
+  (video-trimmer--update-timeline))
 
 (defun video-trimmer-decrement-increment ()
   "Decrement the trimming increment."
@@ -129,11 +139,59 @@ If point is on a `dired' file, open for trimming."
               ((> video-trimmer-move-by-increment 1.0) 1.0)
               ((> video-trimmer-move-by-increment 0.5) 0.5)
               ((> video-trimmer-move-by-increment 0.1) 0.1)
-              (t video-trimmer-move-by-increment))))
+              (t video-trimmer-move-by-increment)))
+  (video-trimmer--update-timeline))
+
+(defun video-trimmer-move-forward ()
+  "Move video front backward."
+  (interactive)
+  (when (or (eq video-trimmer--active-control 'front)
+            (eq video-trimmer--active-control 'bar))
+    (setq video-trimmer--trim-front (min (- video-trimmer--total video-trimmer--trim-back)
+                                         (+ video-trimmer--trim-front video-trimmer-move-by-increment))))
+  (when (or (eq video-trimmer--active-control 'back)
+            (eq video-trimmer--active-control 'bar))
+    (setq video-trimmer--trim-back (max 0 (- video-trimmer--trim-back video-trimmer-move-by-increment))))
+  (cond ((or (eq video-trimmer--active-control 'front)
+             (eq video-trimmer--active-control 'bar))
+         (video-trimmer--extract-frame video-trimmer--trim-front))
+        ((eq video-trimmer--active-control 'back)
+         (video-trimmer--extract-frame video-trimmer--trim-back)))
+  (video-trimmer--update-timeline))
+
+(defun video-trimmer-move-backward ()
+  "Move video front backward."
+  (interactive)
+  (when (or (eq video-trimmer--active-control 'front)
+            (eq video-trimmer--active-control 'bar))
+    (setq video-trimmer--trim-front (max 0 (- video-trimmer--trim-front video-trimmer-move-by-increment))))
+  (when (or (eq video-trimmer--active-control 'back)
+            (eq video-trimmer--active-control 'bar))
+    (setq video-trimmer--trim-back (min (- video-trimmer--total video-trimmer--trim-front)
+                                        (+ video-trimmer--trim-back video-trimmer-move-by-increment))))
+  (cond ((or (eq video-trimmer--active-control 'front)
+             (eq video-trimmer--active-control 'bar))
+         (video-trimmer--extract-frame video-trimmer--trim-front))
+        ((eq video-trimmer--active-control 'back)
+         (video-trimmer--extract-frame video-trimmer--trim-back)))
+  (video-trimmer--update-timeline))
+
+(defun video-trimmer-move-bar-forward ()
+  "Move video bar forward."
+  (interactive)
+  (setq video-trimmer--active-control 'bar)
+  (video-trimmer-move-forward))
+
+(defun video-trimmer-move-bar-backward ()
+  "Move video bar forward."
+  (interactive)
+  (setq video-trimmer--active-control 'bar)
+  (video-trimmer-move-backward))
 
 (defun video-trimmer-move-front-forward ()
   "Move video front forward."
   (interactive)
+  (setq video-trimmer--active-control 'front)
   (setq video-trimmer--trim-front (min (- video-trimmer--total video-trimmer--trim-back)
                                        (+ video-trimmer--trim-front video-trimmer-move-by-increment)))
   (video-trimmer--extract-frame video-trimmer--trim-front)
@@ -142,6 +200,7 @@ If point is on a `dired' file, open for trimming."
 (defun video-trimmer-move-front-backward ()
   "Move video front backward."
   (interactive)
+  (setq video-trimmer--active-control 'front)
   (setq video-trimmer--trim-front (max 0 (- video-trimmer--trim-front video-trimmer-move-by-increment)))
   (video-trimmer--extract-frame video-trimmer--trim-front)
   (video-trimmer--update-timeline))
@@ -149,6 +208,7 @@ If point is on a `dired' file, open for trimming."
 (defun video-trimmer-move-back-forward ()
   "Move video back forward."
   (interactive)
+  (setq video-trimmer--active-control 'back)
   (setq video-trimmer--trim-back (max 0 (- video-trimmer--trim-back video-trimmer-move-by-increment)))
   (video-trimmer--extract-frame (- video-trimmer--total video-trimmer--trim-back))
   (video-trimmer--update-timeline))
@@ -156,6 +216,7 @@ If point is on a `dired' file, open for trimming."
 (defun video-trimmer-move-back-backward ()
   "Move video back backward."
   (interactive)
+  (setq video-trimmer--active-control 'back)
   (setq video-trimmer--trim-back (min (- video-trimmer--total video-trimmer--trim-front)
                                       (+ video-trimmer--trim-back video-trimmer-move-by-increment)))
   (video-trimmer--extract-frame (- video-trimmer--total video-trimmer--trim-back))
@@ -192,37 +253,35 @@ If point is on a `dired' file, open for trimming."
   (interactive)
   (quit-restore-window (get-buffer-window (current-buffer)) 'kill))
 
+(transient-define-prefix video-trimmer-custom-menu ()
+  "Custom times and increments."
+  [["Custom"
+    ("f" "Front..." video-trimmer-set-front-time)
+    ("b" "Back..." video-trimmer-set-back-time)
+    ]
+   [""
+    ("d" "Delta..." video-trimmer-set-custom-increment)
+    ("l" "Length..." video-trimmer-set-time-length)]])
+
 (transient-define-prefix video-trimmer-menu ()
   "Video trimmer control menu."
   :transient-suffix 'transient--do-stay
   :transient-non-suffix 'transient--do-warn
   [[:description
-    (lambda () (format "Front (%s)"
-                       (video-trimmer--format-time video-trimmer--trim-front)))
-                 ("}" "Move Forward" video-trimmer-move-front-forward)
-                 ("{" "Move Backward" video-trimmer-move-front-backward)]
+    (lambda () (format "Active (%s)" video-trimmer--active-control))
+    ("TAB" "Cycle control" video-trimmer-cycle-active-controls)]
+   ["Move"
+    ("<left>" "Backward" video-trimmer-move-backward)
+    ("<right>" "Forward" video-trimmer-move-forward)]
    [:description
-    (lambda () (format "Back (%s)"
-                       (video-trimmer--format-time
-                        (- video-trimmer--total video-trimmer--trim-back))))
-                 ("]" "Move Forward" video-trimmer-move-back-forward)
-                 ("[" "Move Backward" video-trimmer-move-back-backward)]
-   [:description
-    (lambda () (format "Increment (%s)" (video-trimmer--format-time video-trimmer-move-by-increment)))
-    ("+" "Increase" video-trimmer-increment-increment)
-    ("-" "Decrease" video-trimmer-decrement-increment)]
-   ["Custom"
-    ("f" "Front..." video-trimmer-set-front-time)
-    ("b" "Back..." video-trimmer-set-back-time)
-    ]
+    (lambda () (format "Delta (%s)" (video-trimmer--format-time video-trimmer-move-by-increment)))
+    ("<up>" "Increase" video-trimmer-increment-increment)
+    ("<down>" "Decrease" video-trimmer-decrement-increment)]
    [""
-    ("l" "Length..." video-trimmer-set-time-length)
-    ("c" "Increment..." video-trimmer-set-custom-increment)
-    ]
-   [""
-    ("RET" "Save copy" video-trimmer-save-trimmed-copy :transient nil)
+    ("c" "Custom..." video-trimmer-custom-menu)
     ("t" "Tutorial" video-trimmer-open-tutorial)]
    [""
+    ("RET" "Save copy" video-trimmer-save-trimmed-copy :transient nil)
     ("q" "Quit" video-trimmer-quit :transient nil)]])
 
 (defun video-trimmer-open-tutorial ()
@@ -230,10 +289,28 @@ If point is on a `dired' file, open for trimming."
   (interactive)
   (browse-url "https://www.youtube.com/watch?v=9kaIXkImCAM"))
 
+(defun video-trimmer-cycle-active-controls ()
+  "Cycle through active controls."
+  (interactive)
+  (setq video-trimmer--active-control
+        (pcase video-trimmer--active-control
+          ('front 'back)
+          ('back 'bar)
+          (_ 'front)))
+  (video-trimmer--update-timeline))
+
 (defun video-trimmer--update-timeline ()
   "Update and display the current timeline."
   (let ((message-log-max nil))
-    (message "%s" (video-trimmer--make-timeline video-trimmer--total video-trimmer--trim-front video-trimmer--trim-back))))
+    (message "%s" (video-trimmer--make-timeline
+                   :total video-trimmer--total
+                   :highlight-front (or (eq video-trimmer--active-control 'front)
+                                        (eq video-trimmer--active-control 'bar))
+                   :highlight-bar (eq video-trimmer--active-control 'bar)
+                   :highlight-back (or (eq video-trimmer--active-control 'back)
+                                       (eq video-trimmer--active-control 'bar))
+                   :trim-front video-trimmer--trim-front
+                   :trim-back video-trimmer--trim-back))))
 
 (defun video-trimmer--format-time (seconds)
   "Format SECONDS as MM:SS.SS or HH:MM:SS.SS if hours > 0."
@@ -245,10 +322,22 @@ If point is on a `dired' file, open for trimming."
         (format "%02d:%02d:%02d.%02d" hours minutes secs centis)
       (format "%02d:%02d.%02d" minutes secs centis))))
 
-(defun video-trimmer--make-timeline (total &optional trim-front trim-back)
-  "Make a timeline bar showing TOTAL secs with TRIM-FRONT and TRIM-BACK."
-  (setq trim-front (or trim-front 0))
-  (setq trim-back (or trim-back 0))
+(cl-defun video-trimmer--make-timeline
+    (&key total (trim-front 0) (trim-back 0)
+          highlight-front highlight-back highlight-bar)
+  "Make a timeline bar showing TOTAL seconds.
+
+Optional:
+
+ TRIM-FRONT seconds.
+ HIGHLIGHT-FRONT non-nil to highlight front.
+ TRIM-BACK seconds.
+ HIGHLIGHT-BACK non-nil to highlight back.
+ HIGHLIGHT-BAR non-nil to highlight front, bar and back.
+
+A timeline bar looks as follows:
+
+00:00.00 ┄┄┄┄┄┄┄┄┄ 00:10.00"
   (let* ((start-time (video-trimmer--format-time trim-front))
          (end-time (video-trimmer--format-time (- total trim-back)))
          (label (format "%s -- %s" start-time end-time))
@@ -259,16 +348,22 @@ If point is on a `dired' file, open for trimming."
          (back-ratio (/ (float trim-back) total))
          (front-spaces (round (* front-ratio available-width)))
          (back-spaces (round (* back-ratio available-width)))
-         (middle-spaces (- available-width front-spaces back-spaces)))
-    (if (and (= trim-front 0) (= trim-back 0))
-        (concat start-time " "
-                (make-string (- total-width (length start-time) (length end-time) 2) ?┄)
-                " " end-time)
-      (concat (make-string front-spaces ?\s)
-              (substring label 0 (/ label-width 2))
-              (make-string middle-spaces ?┄)
-              (substring label (/ label-width 2))
-              (make-string back-spaces ?\s)))))
+         (middle-spaces (- available-width front-spaces back-spaces))
+         (front-part (substring label 0 (/ label-width 2)))
+         (back-part (substring label (/ label-width 2)))
+         (bar-part (make-string middle-spaces ?┄)))
+    (concat
+     (make-string front-spaces ?\s)
+     (if highlight-front
+         (propertize front-part 'face 'font-lock-builtin-face)
+       front-part)
+     (if highlight-bar
+         (propertize bar-part 'face 'font-lock-builtin-face)
+       bar-part)
+     (if highlight-back
+         (propertize back-part 'face 'font-lock-builtin-face)
+       back-part)
+     (make-string back-spaces ?\s))))
 
 (defun video-trimmer--get-video-duration (filename)
   "Get duration of video FILENAME in seconds using ffprobe."
