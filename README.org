@@ -19,4 +19,4 @@ I wrote a little about how this utility came about in this [[https://xenodium.co
 
 * Trimming videos
 
-Invoke =M-x video-trimming-trim= to open and trim a video. If invoked from =dired=, it opens file at point.
+Invoke =M-x video-trimmer-trim-file= to open and trim a video. If invoked from =dired=, it opens file at point.
