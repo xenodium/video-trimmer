@@ -269,7 +269,7 @@ If point is on a `dired' file, open for trimming."
   :transient-non-suffix 'transient--do-warn
   [[:description
     (lambda () (format "Active (%s)" video-trimmer--active-control))
-    ("TAB" "Cycle control" video-trimmer-cycle-active-controls)]
+    ("TAB" "Cycle control" video-trimmer-cycle-active-control)]
    ["Move"
     ("<left>" "Backward" video-trimmer-move-backward)
     ("<right>" "Forward" video-trimmer-move-forward)]
